@@ -28,7 +28,7 @@ function initScene() {
     controls.update();
 
     // // Load the grass background texture
-    // const grassBackgroundTexture = new THREE.TextureLoader().load('docs/grass.jpg'); 
+    // const grassBackgroundTexture = new THREE.TextureLoader().load('docs/darkgrass.jpg'); 
 
     // // Set the background of the scene to the grassy texture
     // scene.background = grassBackgroundTexture;
@@ -100,20 +100,16 @@ function setupGame() {
     character = new Character(scene, mazeGrid, wallSize);
 }
 
-// Restart the game
+// TODO: fix restart, right now clicking on button leads to black screen
 function restartMaze() {
   // Hide the popup
   const popup = document.getElementById("popup");
   popup.style.display = "none";
 
-  // Clear the scene
   clearScene();
-
-  // Reinitialize the game (generate new maze, reset character, etc.)
   setupGame();
 }
 
-// Helper function to clear all objects from the scene
 function clearScene() {
   while (scene.children.length > 0) {
       const object = scene.children[0];
@@ -151,9 +147,9 @@ function animate() {
 
 // Initialize the game
 function initGame() {
-    initScene(); // Set up the scene, camera, renderer, and controls
-    setupGame(); // Generate the maze, walls, floor, objects, and character
-    renderer.setAnimationLoop(animate); // Start the animation loop
+    initScene(); 
+    setupGame(); 
+    renderer.setAnimationLoop(animate); 
 }
 
 // Start the game
