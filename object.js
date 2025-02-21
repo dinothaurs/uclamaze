@@ -32,7 +32,7 @@ export class MazeObjects {
     }
 
     createObject(gridX, gridY) {
-        const objectSize = this.wallSize * 0.5; // Slightly smaller than wallSize
+        const objectSize = this.wallSize * 0.2; // Slightly smaller than wallSize
         const geometry = new THREE.SphereGeometry(objectSize / 2, 16, 16);
         const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         const object = new THREE.Mesh(geometry, material);
@@ -45,6 +45,8 @@ export class MazeObjects {
 
         this.scene.add(object);
         this.objects.push(object);
+        console.log('MazeObjects initialized');
+        console.log(this.objects); 
     }
 
     // Fisher-Yates shuffle algorithm for randomizing positions
@@ -53,5 +55,8 @@ export class MazeObjects {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+    getObjects() {
+        return this.objects;
     }
 }

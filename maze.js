@@ -103,10 +103,11 @@ export class MazeGenerator {
         this.generate_maze((row+1), r2, (col+1), c2);
     }
 
+
     draw_maze() {
-		// Convert "wall" and open spaces into numeric values for easier rendering
-        for (let i = 0 ; i < this.maze.length ; i++) {
-            for (let j = 0 ; j < this.maze[i].length ; j++) {
+        // Convert "wall" and open spaces into numeric values for easier rendering
+        for (let i = 0; i < this.maze.length; i++) {
+            for (let j = 0; j < this.maze[i].length; j++) {
                 if (i == 0 || i == (this.height * 2) || this.maze[i][j] == "wall") {
                     this.maze[i][j] = 1; // Walls represented as 1
                 }
@@ -115,7 +116,10 @@ export class MazeGenerator {
                 }
             }
         }
-
+    
+        // Mark the exit at the bottom-left corner
+        this.maze[this.height * 2][this.height * 2] = 0; // Exit at bottom-left corner
+        this.maze[(this.height * 2) -1][(this.height * 2)] = 0;
         return this.maze;
     }
 
