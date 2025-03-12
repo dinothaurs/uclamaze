@@ -97,10 +97,10 @@ function setupGame() {
     mazeObjects = new MazeObjects(scene, mazeGrid, wallSize);
 
     // Add player character
-    character = new Character(scene, mazeGrid, wallSize);
+    character = new Character(scene, mazeGrid, wallSize, mazeObjects);
 }
 
-// TODO: fix restart, right now clicking on button leads to black screen
+// TODO(not as important): fix restart, right now clicking on button leads to black screen
 function restartMaze() {
   // Hide the popup
   const popup = document.getElementById("popup");

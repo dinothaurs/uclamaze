@@ -1,5 +1,5 @@
-import {CharacterModel} from './characterModel.js';
-//TODO: character animation
+import { CharacterModel } from './characterModel.js';
+import * as THREE from 'three';
 
 export class Character {
     constructor(scene, mazeGrid, wallSize, mazeObjects) {
@@ -14,6 +14,10 @@ export class Character {
         this.updatePosition();
         this.scene.add(this.characterGroup);
         this.setupControls();
+
+        // Animation loop
+        this.clock = new THREE.Clock();
+        this.animate();
     }
 
     updatePosition() {
@@ -52,11 +56,26 @@ export class Character {
                 this.position.x = newX;
                 this.position.z = newZ;
                 this.updatePosition();
+
+                // Start walking animation
+                this.characterModel.startWalking();
+
+                // Stop walking animation after a short delay
+                setTimeout(() => {
+                    this.characterModel.stopWalking();
+                }, 200); // Adjust the delay to match the walking speed
             }
         });
     }
 
     getPosition() {
         return this.position;
+    }
+
+    // Animation loop
+    animate() {
+        const deltaTime = this.clock.getDelta();
+        this.characterModel.update(deltaTime);
+        requestAnimationFrame(() => this.animate());
     }
 }
