@@ -55,7 +55,7 @@ function setupGame() {
 
     cubeGeometry = new THREE.BoxGeometry(wallSize, wallSize, wallSize);
 
-    // add walls 
+    // Add walls to the scene
     for (let i = 0; i < mazeGrid.length; i++) {
         for (let j = 0; j < mazeGrid[i].length; j++) {
             if (mazeGrid[i][j] === 1) {
@@ -66,7 +66,7 @@ function setupGame() {
         }
     }
 
-    // add floor
+    // Add floor to the scene
     const grassTexture = textureLoader.load('docs/grass.jpg'); 
     grassTexture.repeat.set(0.5, 0.5);
     
@@ -85,10 +85,20 @@ function setupGame() {
     scene.add(floor);
     mazeObjects = new MazeObjects(scene, mazeGrid, wallSize);
 
-    // add player character
+    // Add player character
     character = new Character(scene, mazeGrid, wallSize, mazeObjects);
 
-    // adjust camera to view the entire maze
+    // Add five additional characters at random positions
+    for (let i = 0; i < 5; i++) {
+        const randomPosition = getRandomValidPosition(mazeGrid);
+        if (randomPosition) {
+            const newCharacter = new Character(scene, mazeGrid, wallSize, mazeObjects, 0xff0000, true); // NPC
+            newCharacter.position = randomPosition; 
+            newCharacter.updatePosition(); 
+        }
+    }
+
+    // Adjust camera to view the entire maze
     adjustCameraToViewMaze();
 }
 
@@ -131,6 +141,27 @@ function showPopup() {
 
     const restartButton = document.getElementById("restartButton");
     restartButton.addEventListener("click", restartMaze);
+}
+
+//helper fo getting random pos for npcs
+function getRandomValidPosition(mazeGrid) {
+    const validPositions = [];
+
+    // collect all valid positions
+    for (let i = 0; i < mazeGrid.length; i++) {
+        for (let j = 0; j < mazeGrid[i].length; j++) {
+            if (mazeGrid[i][j] === 0) {
+                validPositions.push({ x: j, z: i });
+            }
+        }
+    }
+
+    if (validPositions.length > 0) {
+        return validPositions[Math.floor(Math.random() * validPositions.length)];
+    } else {
+        console.error("No valid positions found in the maze.");
+        return null;
+    }
 }
 
 // Animation loop

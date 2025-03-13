@@ -1,22 +1,17 @@
 import * as THREE from 'three';
 
 export class CharacterModel {
-    constructor(wallSize) {
+    constructor(wallSize, bodyColor = 0x0000ff) { // Default color is blue
         this.wallSize = wallSize;
         this.characterGroup = new THREE.Group();
-        this.createCharacter();
+        this.createCharacter(bodyColor);
 
         // Animation properties
         this.isWalking = false;
-        this.walkCycle = 0; 
-
-        // Movement direction
-        this.currentDirection = new THREE.Vector3(0, 0, -1); 
-        this.targetDirection = this.currentDirection.clone();
-        this.rotationSpeed = 5; 
+        this.walkCycle = 0; // Tracks the progress of the walking animation
     }
 
-    createCharacter() {
+    createCharacter(bodyColor) {
         const scaleFactor = 0.7;
 
         // Head 
@@ -27,13 +22,13 @@ export class CharacterModel {
 
         // Body 
         const bodyGeometry = new THREE.BoxGeometry(this.wallSize * 0.56, this.wallSize * 0.84, this.wallSize * 0.35);
-        const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+        const bodyMaterial = new THREE.MeshPhongMaterial({ color: bodyColor }); // Use the provided color
         this.body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         this.body.position.y = this.wallSize * 0.56;
 
         // Arms 
         const armGeometry = new THREE.BoxGeometry(this.wallSize * 0.21, this.wallSize * 0.7, this.wallSize * 0.21);
-        const armMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+        const armMaterial = new THREE.MeshPhongMaterial({ color: bodyColor }); // Use the provided color
 
         this.leftArm = new THREE.Mesh(armGeometry, armMaterial);
         this.leftArm.position.set(-this.wallSize * 0.455, this.wallSize * 0.56, 0);
@@ -58,14 +53,14 @@ export class CharacterModel {
         return this.characterGroup;
     }
 
-    //update based on rotation
+    // Update the walking animation
     update(deltaTime) {
         if (this.isWalking) {
             this.walkCycle += deltaTime * 10; // Speed of the walking animation
 
             // Simulate a walking motion by rotating the legs and arms
-            const legRotation = Math.sin(this.walkCycle) * 0.5; 
-            const armRotation = Math.sin(this.walkCycle + Math.PI) * 0.5; 
+            const legRotation = Math.sin(this.walkCycle) * 0.5; // Oscillate between -0.5 and 0.5 radians
+            const armRotation = Math.sin(this.walkCycle + Math.PI) * 0.5; // Opposite phase for arms
 
             // Rotate legs
             this.leftLeg.rotation.x = legRotation;
@@ -75,39 +70,25 @@ export class CharacterModel {
             this.leftArm.rotation.x = armRotation;
             this.rightArm.rotation.x = -armRotation;
         } else {
-            // reset for walking
+            // Reset rotations when not walking
             this.leftLeg.rotation.x = 0;
             this.rightLeg.rotation.x = 0;
             this.leftArm.rotation.x = 0;
             this.rightArm.rotation.x = 0;
         }
-
-        this.updateRotation(deltaTime);
     }
 
-    // update rotation for turn
-    updateRotation(deltaTime) {
-        const currentAngle = this.characterGroup.rotation.y;
-        const targetAngle = Math.atan2(this.currentDirection.x, this.currentDirection.z);
-        const angleDiff = targetAngle - currentAngle;
-        const angleStep = this.rotationSpeed * deltaTime;
-
-        if (Math.abs(angleDiff) > 0.01) {
-            this.characterGroup.rotation.y += Math.sign(angleDiff) * Math.min(angleStep, Math.abs(angleDiff));
-        }
-    }
-
-    // set movement direction
     setDirection(direction) {
-        this.currentDirection = direction.clone().normalize(); //normlaize
+        const angle = Math.atan2(direction.x, direction.z); 
+        this.characterGroup.rotation.y = angle; 
     }
 
-    // start walking
+    // Start the walking animation
     startWalking() {
         this.isWalking = true;
     }
 
-    // stop walking
+    // Stop the walking animation
     stopWalking() {
         this.isWalking = false;
     }

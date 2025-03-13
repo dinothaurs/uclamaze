@@ -2,18 +2,23 @@ import { CharacterModel } from './characterModel.js';
 import * as THREE from 'three';
 
 export class Character {
-    constructor(scene, mazeGrid, wallSize, mazeObjects) {
+    constructor(scene, mazeGrid, wallSize, mazeObjects, bodyColor = 0x0000ff, isNPC = false) {
         this.scene = scene;
         this.mazeGrid = mazeGrid;
         this.wallSize = wallSize;
         this.mazeObjects = mazeObjects;
         this.position = { x: 1, z: 1 };
+        this.isNPC = isNPC; // Flag to identify NPCs
+        this.direction = new THREE.Vector3(0, 0, -1); // Initial direction (forward)
 
-        this.characterModel = new CharacterModel(this.wallSize);
+        this.characterModel = new CharacterModel(this.wallSize, bodyColor);
         this.characterGroup = this.characterModel.getCharacterGroup();
         this.updatePosition();
         this.scene.add(this.characterGroup);
-        this.setupControls();
+
+        if (!this.isNPC) {
+            this.setupControls(); // Only set up controls for the player character
+        }
 
         // Animation loop
         this.clock = new THREE.Clock();
@@ -41,6 +46,45 @@ export class Character {
             }
         }
         return false;
+    }
+
+    //npc walk
+    checkCollision(newX, newZ) {
+        // Ensure newX and newZ are within the maze bounds
+        if (
+            newX < 0 || newX >= this.mazeGrid[0].length ||
+            newZ < 0 || newZ >= this.mazeGrid.length
+        ) {
+            return true; // Out of bounds, treat as a collision
+        }
+
+        // Check if the new position is a wall (1 represents a wall)
+        if (this.mazeGrid[Math.floor(newZ)][Math.floor(newX)] === 1) {
+            return true; // Collision with wall
+        }
+
+        return false; // No collision
+    }
+
+    moveNPC(deltaTime) {
+        if (!this.isNPC) return; 
+
+        const speed = 2;
+        const newX = this.position.x + this.direction.x * speed * deltaTime;
+        const newZ = this.position.z + this.direction.z * speed * deltaTime;
+
+        //check collision
+        if (this.checkCollision(Math.floor(newX), Math.floor(newZ))) {
+            //turn 180
+            this.direction.multiplyScalar(-1); 
+            this.characterModel.setDirection(this.direction); 
+        } else {
+            this.position.x = newX;
+            this.position.z = newZ;
+            this.updatePosition();
+        }
+
+        this.characterModel.startWalking();
     }
 
     setupControls() {
@@ -94,6 +138,9 @@ export class Character {
     animate() {
         const deltaTime = this.clock.getDelta();
         this.characterModel.update(deltaTime);
+        if (this.isNPC) {
+            this.moveNPC(deltaTime); // Move NPCs
+        }
         requestAnimationFrame(() => this.animate());
     }
 }
