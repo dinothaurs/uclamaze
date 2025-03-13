@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 
 export class CharacterModel {
-    constructor(wallSize, bodyColor = 0x0000ff) { // Default color is blue
+    constructor(wallSize, bodyColor = 0x0000ff) { 
         this.wallSize = wallSize;
         this.characterGroup = new THREE.Group();
         this.createCharacter(bodyColor);
 
         // Animation properties
         this.isWalking = false;
-        this.walkCycle = 0; // Tracks the progress of the walking animation
+        this.walkCycle = 0;
     }
 
     createCharacter(bodyColor) {
@@ -56,11 +56,11 @@ export class CharacterModel {
     // Update the walking animation
     update(deltaTime) {
         if (this.isWalking) {
-            this.walkCycle += deltaTime * 10; // Speed of the walking animation
+            this.walkCycle += deltaTime * 10; 
 
-            // Simulate a walking motion by rotating the legs and arms
-            const legRotation = Math.sin(this.walkCycle) * 0.5; // Oscillate between -0.5 and 0.5 radians
-            const armRotation = Math.sin(this.walkCycle + Math.PI) * 0.5; // Opposite phase for arms
+            // make it walk using trig
+            const legRotation = Math.sin(this.walkCycle) * 0.5; 
+            const armRotation = Math.sin(this.walkCycle + Math.PI) * 0.5; 
 
             // Rotate legs
             this.leftLeg.rotation.x = legRotation;
@@ -83,12 +83,10 @@ export class CharacterModel {
         this.characterGroup.rotation.y = angle; 
     }
 
-    // Start the walking animation
     startWalking() {
         this.isWalking = true;
     }
 
-    // Stop the walking animation
     stopWalking() {
         this.isWalking = false;
     }

@@ -101,7 +101,6 @@ export class MazeGenerator {
     
     // Ensure there is a path to the exit
     ensure_exit_path() {
-        // Start at the bottom-right corner (exit)
         let exitRow = this.rows - 2;
         let exitCol = this.cols - 2;
     
@@ -153,7 +152,7 @@ export class MazeGenerator {
             }
         }
     
-        // Clear the exit area (4 squares wide) at the bottom-right corner
+        //make exit
         const exitRowStart = this.rows - 2; // Start at the second-to-last row
         const exitColStart = this.cols - 5; // Start 4 columns from the end
     

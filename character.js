@@ -2,14 +2,14 @@ import { CharacterModel } from './characterModel.js';
 import * as THREE from 'three';
 
 export class Character {
-    constructor(scene, mazeGrid, wallSize, mazeObjects, bodyColor = 0x0000ff, isNPC = false) {
+    constructor(scene, mazeGrid, wallSize, mazeObjects, bodyColor = 0x0000ff, isNPC = false, initialDirection = null) {
         this.scene = scene;
         this.mazeGrid = mazeGrid;
         this.wallSize = wallSize;
         this.mazeObjects = mazeObjects;
         this.position = { x: 1, z: 1 };
-        this.isNPC = isNPC; // Flag to identify NPCs
-        this.direction = new THREE.Vector3(0, 0, -1); // Initial direction (forward)
+        this.isNPC = isNPC;
+        this.direction = initialDirection || new THREE.Vector3(0, 0, -1); 
 
         this.characterModel = new CharacterModel(this.wallSize, bodyColor);
         this.characterGroup = this.characterModel.getCharacterGroup();
@@ -17,10 +17,9 @@ export class Character {
         this.scene.add(this.characterGroup);
 
         if (!this.isNPC) {
-            this.setupControls(); // Only set up controls for the player character
+            this.setupControls();
         }
 
-        // Animation loop
         this.clock = new THREE.Clock();
         this.animate();
     }
@@ -48,22 +47,20 @@ export class Character {
         return false;
     }
 
-    //npc walk
     checkCollision(newX, newZ) {
-        // Ensure newX and newZ are within the maze bounds
         if (
             newX < 0 || newX >= this.mazeGrid[0].length ||
             newZ < 0 || newZ >= this.mazeGrid.length
         ) {
-            return true; // Out of bounds, treat as a collision
+            return true; // out of bounds case
         }
 
-        // Check if the new position is a wall (1 represents a wall)
+        // check if wall
         if (this.mazeGrid[Math.floor(newZ)][Math.floor(newX)] === 1) {
-            return true; // Collision with wall
+            return true; // true if crashes
         }
 
-        return false; // No collision
+        return false; // no crash
     }
 
     moveNPC(deltaTime) {
@@ -73,9 +70,9 @@ export class Character {
         const newX = this.position.x + this.direction.x * speed * deltaTime;
         const newZ = this.position.z + this.direction.z * speed * deltaTime;
 
-        //check collision
+        //check for wall
         if (this.checkCollision(Math.floor(newX), Math.floor(newZ))) {
-            //turn 180
+            // turn 180 if need be
             this.direction.multiplyScalar(-1); 
             this.characterModel.setDirection(this.direction); 
         } else {

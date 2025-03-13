@@ -3,11 +3,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { MazeGenerator } from './maze.js';
 import { Character } from './character.js';
 import { MazeObjects } from './object.js';
+import { Scooter } from './scooter.js';
+
 
 // Global variables
 let scene, camera, renderer, controls;
 let mazeSize, wallSize, wallMaterial, cubeGeometry;
 let mazeGenerator, mazeGrid, mazeObjects, character;
+let scooter;
 
 // Initialize the scene, camera, renderer, and controls
 function initScene() {
@@ -29,8 +32,8 @@ function initScene() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Soft white light
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White directional light
-    directionalLight.position.set(1, 1, 1).normalize(); // Light comes from the top-right
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); 
+    directionalLight.position.set(1, 1, 1).normalize(); 
     scene.add(directionalLight);
 
 }
@@ -53,7 +56,8 @@ function setupGame() {
       bumpScale: 0.5,  
     });
 
-    cubeGeometry = new THREE.BoxGeometry(wallSize, wallSize, wallSize);
+    const wallHeight = 4; //make wall taller
+    cubeGeometry = new THREE.BoxGeometry(wallSize, wallHeight, wallSize);
 
     // Add walls to the scene
     for (let i = 0; i < mazeGrid.length; i++) {
@@ -85,16 +89,42 @@ function setupGame() {
     scene.add(floor);
     mazeObjects = new MazeObjects(scene, mazeGrid, wallSize);
 
+    const scooterPosition = getRandomValidPosition(mazeGrid); 
+    if (scooterPosition) {
+        scooter = new Scooter(
+            scene, 
+            { 
+                x: scooterPosition.x * wallSize - mazeGrid[0].length / 2, 
+                y: wallSize / 2, 
+                z: -scooterPosition.z * wallSize + mazeGrid.length / 2 
+            }, 
+            0.001 // Adjust scale if needed
+        );
+    }
+
     // Add player character
     character = new Character(scene, mazeGrid, wallSize, mazeObjects);
 
-    // Add five additional characters at random positions
-    for (let i = 0; i < 5; i++) {
+    //adjust if we want to add more NPCs
+    for (let i = 0; i < 18; i++) {
         const randomPosition = getRandomValidPosition(mazeGrid);
         if (randomPosition) {
-            const newCharacter = new Character(scene, mazeGrid, wallSize, mazeObjects, 0xff0000, true); // NPC
-            newCharacter.position = randomPosition; 
-            newCharacter.updatePosition(); 
+            const isHorizontal = Math.random() < 0.5;
+            const direction = isHorizontal 
+                ? new THREE.Vector3(1, 0, 0)
+                : new THREE.Vector3(0, 0, -1); 
+    
+            const newCharacter = new Character(
+                scene,
+                mazeGrid,
+                wallSize,
+                mazeObjects,
+                0xff0000,
+                true,
+                direction 
+            );
+            newCharacter.position = randomPosition;
+            newCharacter.updatePosition();
         }
     }
 

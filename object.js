@@ -1,13 +1,14 @@
 import * as THREE from 'three';
-//TODO: fix collision, so that character can't pass through the ball
+import { Scooter } from './scooter.js'; 
+
 export class MazeObjects {
     constructor(scene, mazeGrid, wallSize) {
         this.scene = scene;
         this.mazeGrid = mazeGrid;
         this.wallSize = wallSize;
         this.objects = [];
-        this.objectCoordinates = []; // Array to store coordinates of objects
-        this.numObjects = Math.floor(mazeGrid.length * mazeGrid[0].length * 0.05); // Adjust density
+        this.objectCoordinates = []; 
+        this.numObjects = 20;
 
         this.placeObjects();
     }
@@ -15,40 +16,48 @@ export class MazeObjects {
     placeObjects() {
         let openSpaces = [];
 
-        // Find all open spaces in the maze where objects can be placed
-        for (let i = 1; i < this.mazeGrid.length - 1; i++) {
+        // find open spaces
+        for (let i = 1; i < this.mazeGrid.length-1; i++) {
             for (let j = 1; j < this.mazeGrid[i].length - 1; j++) {
-                if (this.mazeGrid[i][j] === 0) { // 0 means open path
+                if (this.mazeGrid[i][j] === 0) { // 0 = open
                     openSpaces.push({ x: j, y: i });
                 }
             }
         }
 
-        // Shuffle and select random positions for objects
+        //random placement
         this.shuffleArray(openSpaces);
         let selectedPositions = openSpaces.slice(0, this.numObjects);
 
-        // Place objects in the scene and store their coordinates
         selectedPositions.forEach(pos => {
-            this.createObject(pos.x, pos.y);
-            this.objectCoordinates.push({ x: pos.x, y: pos.y }); // Store the coordinates
+            this.createScooter(pos.x, pos.y);
+            this.objectCoordinates.push({ x: pos.x, y: pos.y }); 
         });
     }
 
-    createObject(gridX, gridY) {
-        const objectSize = this.wallSize * 0.2; // Slightly smaller than wallSize
-        const geometry = new THREE.SphereGeometry(objectSize / 2, 16, 16);
-        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const object = new THREE.Mesh(geometry, material);
-
-        object.position.set(
-            gridX * this.wallSize - this.mazeGrid[0].length / 2,
-            objectSize / 2,
-            -gridY * this.wallSize + this.mazeGrid.length / 2
-        );
-
-        this.scene.add(object);
-        this.objects.push(object);
+    createScooter(gridX, gridY) {
+        const position = {
+            x: gridX * this.wallSize - this.mazeGrid[0].length / 2,
+            y: 0, // adjust to make it look more liek on ground if need be
+            z: -gridY * this.wallSize + this.mazeGrid.length / 2
+        };
+    
+        const scale = 0.005; // make smaller if want scooter smaller
+        const scooter = new Scooter(this.scene, position, scale);
+    
+        const randomRotation = Math.random() * Math.PI * 2;
+        if (scooter.model) {
+            scooter.model.rotation.y = randomRotation;
+        } else {
+            const interval = setInterval(() => {
+                if (scooter.model) {
+                    scooter.model.rotation.y = randomRotation;
+                    clearInterval(interval);
+                }
+            }, 100);
+        }
+    
+        this.objects.push(scooter); // Store the scooter instance
     }
 
     // Fisher-Yates shuffle algorithm for randomizing positions
