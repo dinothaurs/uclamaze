@@ -46,20 +46,38 @@ export class Character {
     setupControls() {
         document.addEventListener("keydown", (event) => {
             let newX = this.position.x, newZ = this.position.z;
+            let direction = null;
+    
             switch (event.key) {
-                case "ArrowDown": newZ -= 1; break;
-                case "ArrowUp": newZ += 1; break;
-                case "ArrowLeft": newX -= 1; break;
-                case "ArrowRight": newX += 1; break;
+                case "ArrowDown":
+                    newZ -= 1;
+                    direction = new THREE.Vector3(0, 0, 1); // Move backward
+                    break;
+                case "ArrowUp":
+                    newZ += 1;
+                    direction = new THREE.Vector3(0, 0, -1); // Move forward
+                    break;
+                case "ArrowLeft":
+                    newX -= 1;
+                    direction = new THREE.Vector3(-1, 0, 0); // Move left
+                    break;
+                case "ArrowRight":
+                    newX += 1;
+                    direction = new THREE.Vector3(1, 0, 0); // Move right
+                    break;
             }
-            if (this.mazeGrid[newZ][newX] === 0) {
+    
+            if (direction && this.mazeGrid[newZ][newX] === 0) {
                 this.position.x = newX;
                 this.position.z = newZ;
                 this.updatePosition();
-
+    
+                // Set the new movement direction for smooth rotation
+                this.characterModel.setDirection(direction);
+    
                 // Start walking animation
                 this.characterModel.startWalking();
-
+    
                 // Stop walking animation after a short delay
                 setTimeout(() => {
                     this.characterModel.stopWalking();

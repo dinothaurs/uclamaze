@@ -8,7 +8,12 @@ export class CharacterModel {
 
         // Animation properties
         this.isWalking = false;
-        this.walkCycle = 0; // Tracks the progress of the walking animation
+        this.walkCycle = 0; 
+
+        // Movement direction
+        this.currentDirection = new THREE.Vector3(0, 0, -1); 
+        this.targetDirection = this.currentDirection.clone();
+        this.rotationSpeed = 5; 
     }
 
     createCharacter() {
@@ -53,14 +58,14 @@ export class CharacterModel {
         return this.characterGroup;
     }
 
-    // Update the walking animation
+    //update based on rotation
     update(deltaTime) {
         if (this.isWalking) {
             this.walkCycle += deltaTime * 10; // Speed of the walking animation
 
             // Simulate a walking motion by rotating the legs and arms
-            const legRotation = Math.sin(this.walkCycle) * 0.5; // Oscillate between -0.5 and 0.5 radians
-            const armRotation = Math.sin(this.walkCycle + Math.PI) * 0.5; // Opposite phase for arms
+            const legRotation = Math.sin(this.walkCycle) * 0.5; 
+            const armRotation = Math.sin(this.walkCycle + Math.PI) * 0.5; 
 
             // Rotate legs
             this.leftLeg.rotation.x = legRotation;
@@ -70,20 +75,39 @@ export class CharacterModel {
             this.leftArm.rotation.x = armRotation;
             this.rightArm.rotation.x = -armRotation;
         } else {
-            // Reset rotations when not walking
+            // reset for walking
             this.leftLeg.rotation.x = 0;
             this.rightLeg.rotation.x = 0;
             this.leftArm.rotation.x = 0;
             this.rightArm.rotation.x = 0;
         }
+
+        this.updateRotation(deltaTime);
     }
 
-    // Start the walking animation
+    // update rotation for turn
+    updateRotation(deltaTime) {
+        const currentAngle = this.characterGroup.rotation.y;
+        const targetAngle = Math.atan2(this.currentDirection.x, this.currentDirection.z);
+        const angleDiff = targetAngle - currentAngle;
+        const angleStep = this.rotationSpeed * deltaTime;
+
+        if (Math.abs(angleDiff) > 0.01) {
+            this.characterGroup.rotation.y += Math.sign(angleDiff) * Math.min(angleStep, Math.abs(angleDiff));
+        }
+    }
+
+    // set movement direction
+    setDirection(direction) {
+        this.currentDirection = direction.clone().normalize(); //normlaize
+    }
+
+    // start walking
     startWalking() {
         this.isWalking = true;
     }
 
-    // Stop the walking animation
+    // stop walking
     stopWalking() {
         this.isWalking = false;
     }

@@ -15,8 +15,6 @@ function initScene() {
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 15, 0);
-    camera.lookAt(0, 0, 0);
 
     // Renderer setup
     renderer = new THREE.WebGLRenderer();
@@ -27,23 +25,14 @@ function initScene() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.update();
 
-    // // Load the grass background texture
-    // const grassBackgroundTexture = new THREE.TextureLoader().load('docs/darkgrass.jpg'); 
-
-    // // Set the background of the scene to the grassy texture
-    // scene.background = grassBackgroundTexture;
-    
     // Lighting
-    const pointLight = new THREE.PointLight(0xffffff, 100, 100);
-    pointLight.position.set(5, 5, 5);
-    scene.add(pointLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Soft white light
+    scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(0.5, 0, 1.0).normalize();
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White directional light
+    directionalLight.position.set(1, 1, 1).normalize(); // Light comes from the top-right
     scene.add(directionalLight);
 
-    const ambientLight = new THREE.AmbientLight(0x505050);
-    scene.add(ambientLight);
 }
 
 // Setup and generate the game (maze, walls, floor, objects, and character)
@@ -58,7 +47,7 @@ function setupGame() {
     const brickTexture = textureLoader.load('docs/bricks.jpg'); 
     brickTexture.repeat.set(0.3, 0.3);
 
-    const wallMaterial = new THREE.MeshPhongMaterial({
+    wallMaterial = new THREE.MeshPhongMaterial({
       map: brickTexture,  
       bumpMap: brickTexture, 
       bumpScale: 0.5,  
@@ -66,7 +55,7 @@ function setupGame() {
 
     cubeGeometry = new THREE.BoxGeometry(wallSize, wallSize, wallSize);
 
-    // Add walls to the scene
+    // add walls 
     for (let i = 0; i < mazeGrid.length; i++) {
         for (let j = 0; j < mazeGrid[i].length; j++) {
             if (mazeGrid[i][j] === 1) {
@@ -77,7 +66,7 @@ function setupGame() {
         }
     }
 
-    // Add floor to the scene
+    // add floor
     const grassTexture = textureLoader.load('docs/grass.jpg'); 
     grassTexture.repeat.set(0.5, 0.5);
     
@@ -96,13 +85,31 @@ function setupGame() {
     scene.add(floor);
     mazeObjects = new MazeObjects(scene, mazeGrid, wallSize);
 
-    // Add player character
+    // add player character
     character = new Character(scene, mazeGrid, wallSize, mazeObjects);
+
+    // adjust camera to view the entire maze
+    adjustCameraToViewMaze();
 }
+
+// adjust the camera to view the entire maze
+function adjustCameraToViewMaze() {
+    const mazeWidth = mazeSize.width * wallSize; 
+    const mazeDepth = mazeSize.height * wallSize; 
+
+    const maxDimension = Math.max(mazeWidth, mazeDepth);
+
+    const cameraHeight = maxDimension * 4; 
+    camera.position.set(0, cameraHeight, 0); 
+
+    camera.lookAt(mazeWidth / 2, 0, mazeDepth / 2); 
+    camera.rotation.x = -Math.PI / 2; 
+}
+
 
 // TODO(not as important): fix restart, right now clicking on button leads to black screen
 function restartMaze() {
-  // Hide the popup
+  // hide the popup
   const popup = document.getElementById("popup");
   popup.style.display = "none";
 
@@ -117,25 +124,32 @@ function clearScene() {
   }
 }
 
-// Show the popup when the player reaches the exit
+// show exit popup
 function showPopup() {
     const popup = document.getElementById("popup");
-    popup.style.display = "block"; // Show the popup
+    popup.style.display = "block";
 
     const restartButton = document.getElementById("restartButton");
     restartButton.addEventListener("click", restartMaze);
 }
 
 // Animation loop
+let lastTime = performance.now();
+
 function animate() {
     requestAnimationFrame(animate);
+
+    const currentTime = performance.now();
+    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+    lastTime = currentTime;
+
     controls.update();
     renderer.render(scene, camera);
 
-    // Get player's current position in 3D space
+    // get pos
     const { x, z } = character.getPosition();
 
-    // Check if the character is within the range of the exit
+    // check within range
     const exitX = (mazeSize.width * 2 - 1) * wallSize;
     const exitZ = (mazeSize.height * 2 - 1) * wallSize;
     const distanceToExit = Math.sqrt(Math.pow(x - exitX, 2) + Math.pow(z - exitZ, 2));
