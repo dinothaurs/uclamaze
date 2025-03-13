@@ -26,63 +26,68 @@ export class Character {
 
     updatePosition() {
         this.characterGroup.position.set(
-            this.position.x * this.wallSize - this.mazeGrid[0].length / 2,
+            (this.position.x -0.2) * this.wallSize - (this.mazeGrid[0].length * this.wallSize) / 2,
             0.3,
-            -this.position.z * this.wallSize + this.mazeGrid.length / 2
+            -((this.position.z - 0.5) * this.wallSize - (this.mazeGrid.length * this.wallSize) / 2)
         );
     }
+    
 
     checkCollision(newX, newZ) {
-        if (!this.mazeObjects || !this.mazeObjects.objectCoordinates) {
-            console.error("Maze objects are not properly initialized.");
-            return false;
+        const buffer = 0.5; // Adjusted buffer for wider characters
+
+        if (
+            newX < buffer || newX >= this.mazeGrid[0].length - buffer ||
+            newZ < buffer || newZ >= this.mazeGrid.length - buffer ||
+            this.mazeGrid[Math.floor(newZ)][Math.floor(newX)] === 1
+        ) {
+            return true;
         }
 
-        for (const objectPos of this.mazeObjects.objectCoordinates) {
-            const tolerance = 0.2;
-            if (Math.abs(objectPos.x - newX) < tolerance && Math.abs(objectPos.y - newZ) < tolerance) {
-                return true;
+        if (this.mazeObjects && this.mazeObjects.objects) {
+            for (const scooter of this.mazeObjects.objects) {
+                const scooterPos = scooter.getPosition();
+                const scooterSize = scooter.getSize();
+                if (
+                    Math.abs(newX - scooterPos.x) < scooterSize.x / 2 + buffer &&
+                    Math.abs(newZ - scooterPos.z) < scooterSize.z / 2 + buffer
+                ) {
+                    return true;
+                }
             }
         }
+
         return false;
     }
 
-    checkCollision(newX, newZ) {
-        if (
-            newX < 0 || newX >= this.mazeGrid[0].length ||
-            newZ < 0 || newZ >= this.mazeGrid.length
-        ) {
-            return true; // out of bounds case
-        }
-
-        // check if wall
-        if (this.mazeGrid[Math.floor(newZ)][Math.floor(newX)] === 1) {
-            return true; // true if crashes
-        }
-
-        return false; // no crash
-    }
-
     moveNPC(deltaTime) {
-        if (!this.isNPC) return; 
+        if (!this.isNPC) return;
 
         const speed = 2;
-        const newX = this.position.x + this.direction.x * speed * deltaTime;
-        const newZ = this.position.z + this.direction.z * speed * deltaTime;
+        const potentialMoves = [
+            this.direction,
+            new THREE.Vector3(this.direction.z, 0, -this.direction.x),
+            new THREE.Vector3(-this.direction.z, 0, this.direction.x),
+            this.direction.clone().multiplyScalar(-1)
+        ];
 
-        //check for wall
-        if (this.checkCollision(Math.floor(newX), Math.floor(newZ))) {
-            // turn 180 if need be
-            this.direction.multiplyScalar(-1); 
-            this.characterModel.setDirection(this.direction); 
-        } else {
-            this.position.x = newX;
-            this.position.z = newZ;
-            this.updatePosition();
+        for (const move of potentialMoves) {
+            const newX = this.position.x + move.x * speed * deltaTime;
+            const newZ = this.position.z + move.z * speed * deltaTime;
+            if (!this.checkCollision(newX, newZ)) {
+                this.direction = move;
+                this.position.x = Math.round(newX * 10) / 10;
+                this.position.z = Math.round(newZ * 10) / 10;
+                this.characterModel.setDirection(this.direction);
+                this.updatePosition();
+                this.characterModel.startWalking();
+                return;
+            }
         }
 
-        this.characterModel.startWalking();
+        this.characterModel.stopWalking();
     }
+
 
     setupControls() {
         document.addEventListener("keydown", (event) => {
@@ -108,21 +113,16 @@ export class Character {
                     break;
             }
     
-            if (direction && this.mazeGrid[newZ][newX] === 0) {
+            if (direction && this.mazeGrid[newZ][newX] === 0 && !this.checkCollision(newX, newZ)) {
                 this.position.x = newX;
                 this.position.z = newZ;
                 this.updatePosition();
     
-                // Set the new movement direction for smooth rotation
                 this.characterModel.setDirection(direction);
-    
-                // Start walking animation
                 this.characterModel.startWalking();
-    
-                // Stop walking animation after a short delay
                 setTimeout(() => {
                     this.characterModel.stopWalking();
-                }, 200); // Adjust the delay to match the walking speed
+                }, 200); // walking speed
             }
         });
     }
