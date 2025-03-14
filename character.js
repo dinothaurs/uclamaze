@@ -7,9 +7,9 @@ export class Character {
         this.mazeGrid = mazeGrid;
         this.wallSize = wallSize;
         this.mazeObjects = mazeObjects;
-        this.position = { x: 1, z: 1 };
+        this.position = { x: 5.3, z: 4.9 };
         this.isNPC = isNPC;
-        this.direction = initialDirection || new THREE.Vector3(0, 0, -1); 
+        this.direction = initialDirection || new THREE.Vector3(0, 0, -1);
 
         this.characterModel = new CharacterModel(this.wallSize, bodyColor);
         this.characterGroup = this.characterModel.getCharacterGroup();
@@ -26,20 +26,21 @@ export class Character {
 
     updatePosition() {
         this.characterGroup.position.set(
-            (this.position.x -0.2) * this.wallSize - (this.mazeGrid[0].length * this.wallSize) / 2,
+            (this.position.x - 0.2) * this.wallSize - (this.mazeGrid[0].length * this.wallSize) / 2,
             0.3,
             -((this.position.z - 0.5) * this.wallSize - (this.mazeGrid.length * this.wallSize) / 2)
         );
     }
-    
 
     checkCollision(newX, newZ) {
-        const buffer = 0.5; // Adjusted buffer for wider characters
+        const buffer = 0.5;
+        const gridX = Math.floor(newX / this.wallSize);
+        const gridZ = Math.floor(newZ / this.wallSize);
 
         if (
-            newX < buffer || newX >= this.mazeGrid[0].length - buffer ||
-            newZ < buffer || newZ >= this.mazeGrid.length - buffer ||
-            this.mazeGrid[Math.floor(newZ)][Math.floor(newX)] === 1
+            gridX < buffer || gridX >= this.mazeGrid[0].length - buffer ||
+            gridZ < buffer || gridZ >= this.mazeGrid.length - buffer ||
+            this.mazeGrid[gridZ][gridX] === 1
         ) {
             return true;
         }
@@ -64,6 +65,7 @@ export class Character {
         if (!this.isNPC) return;
 
         const speed = 2;
+        const stepSize = this.wallSize;
         const potentialMoves = [
             this.direction,
             new THREE.Vector3(this.direction.z, 0, -this.direction.x),
@@ -88,41 +90,41 @@ export class Character {
         this.characterModel.stopWalking();
     }
 
-
     setupControls() {
         document.addEventListener("keydown", (event) => {
             let newX = this.position.x, newZ = this.position.z;
             let direction = null;
-    
+            const stepSize = this.wallSize;
+
             switch (event.key) {
                 case "ArrowDown":
-                    newZ -= 1;
-                    direction = new THREE.Vector3(0, 0, 1); // Move backward
+                    newZ -= stepSize;
+                    direction = new THREE.Vector3(0, 0, 1);
                     break;
                 case "ArrowUp":
-                    newZ += 1;
-                    direction = new THREE.Vector3(0, 0, -1); // Move forward
+                    newZ += stepSize;
+                    direction = new THREE.Vector3(0, 0, -1);
                     break;
                 case "ArrowLeft":
-                    newX -= 1;
-                    direction = new THREE.Vector3(-1, 0, 0); // Move left
+                    newX -= stepSize;
+                    direction = new THREE.Vector3(-1, 0, 0);
                     break;
                 case "ArrowRight":
-                    newX += 1;
-                    direction = new THREE.Vector3(1, 0, 0); // Move right
+                    newX += stepSize;
+                    direction = new THREE.Vector3(1, 0, 0);
                     break;
             }
-    
-            if (direction && this.mazeGrid[newZ][newX] === 0 && !this.checkCollision(newX, newZ)) {
+
+            if (direction && !this.checkCollision(newX, newZ)) {
                 this.position.x = newX;
                 this.position.z = newZ;
                 this.updatePosition();
-    
+
                 this.characterModel.setDirection(direction);
                 this.characterModel.startWalking();
                 setTimeout(() => {
                     this.characterModel.stopWalking();
-                }, 200); // walking speed
+                }, 200);
             }
         });
     }
@@ -131,12 +133,11 @@ export class Character {
         return this.position;
     }
 
-    // Animation loop
     animate() {
         const deltaTime = this.clock.getDelta();
         this.characterModel.update(deltaTime);
         if (this.isNPC) {
-            this.moveNPC(deltaTime); // Move NPCs
+            this.moveNPC(deltaTime);
         }
         requestAnimationFrame(() => this.animate());
     }
