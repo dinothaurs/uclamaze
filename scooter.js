@@ -7,7 +7,7 @@ export class Scooter {
         this.position = position;
         this.scale = scale;
         this.model = null;
-        this.boundingBox = null; // create a box for collision detection
+        this.boundingBox = new THREE.Box3(); // Bounding box for collision detection
         this.loadModel();
     }
 
@@ -19,7 +19,7 @@ export class Scooter {
             this.scene.add(object);
             this.model = object;
 
-            // update  bounding box
+            // Update bounding box
             this.updateBoundingBox();
         }, 
         (xhr) => {
@@ -36,18 +36,19 @@ export class Scooter {
             this.updateBoundingBox();
         }
     }
-    //for collision detection
+
+    // Update bounding box for collision detection
     updateBoundingBox() {
         if (this.model) {
-            const box = new THREE.Box3().setFromObject(this.model);
-            this.boundingBox = box;
+            this.boundingBox.setFromObject(this.model);
         }
     }
 
+    // Check collision with another bounding box
     checkCollision(targetBox) {
-        if (!this.boundingBox) return false;
         return this.boundingBox.intersectsBox(targetBox);
     }
+
     getPosition() {
         if (this.model) {
             return {
@@ -58,6 +59,7 @@ export class Scooter {
         }
         return this.position; // Fallback to initial position if model is not loaded yet
     }
+
     getSize() {
         if (this.boundingBox) {
             const size = new THREE.Vector3();

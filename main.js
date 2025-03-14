@@ -11,6 +11,8 @@ let scene, camera, renderer, controls;
 let mazeSize, wallSize, wallMaterial, cubeGeometry;
 let mazeGenerator, mazeGrid, mazeObjects, character;
 let scooter;
+let controlPanel;
+let isFirstPerson = false;
 
 // Initialize the scene, camera, renderer, and controls
 function initScene() {
@@ -20,23 +22,77 @@ function initScene() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
     // Renderer setup
-    renderer = new THREE.WebGLRenderer();
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; // Enable shadow mapping
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
     document.body.appendChild(renderer.domElement);
 
     // Controls setup
     controls = new OrbitControls(camera, renderer.domElement);
+    controls.enabled = !isFirstPerson; // Disable orbit controls in first-person view
     controls.update();
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Soft white light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); 
-    directionalLight.position.set(1, 1, 1).normalize(); 
+    // Directional light for shadows
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 20, 10); // Position the light
+    directionalLight.castShadow = true; // Enable shadow casting
+
+    // Shadow map settings
+    directionalLight.shadow.mapSize.width = 2048; // Higher resolution for better shadows
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -10;
+    directionalLight.shadow.camera.right = 10;
+    directionalLight.shadow.camera.top = 10;
+    directionalLight.shadow.camera.bottom = -10;
+
     scene.add(directionalLight);
 
+    // Event listener for POV toggle
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'c' || event.key === 'C') {
+            togglePOV();
+        }
+    });
 }
+
+// Function to toggle between first-person and third-person perspectives
+function togglePOV() {
+    isFirstPerson = !isFirstPerson;
+    controls.enabled = !isFirstPerson; // Disable orbit controls in first-person view
+
+    if (isFirstPerson) {
+        const characterPosition = character.characterGroup.position;
+    
+        // Offset the camera slightly above and behind the character
+        const offset = new THREE.Vector3(-2, 2, 5); // Adjust these values as needed
+        offset.applyQuaternion(character.characterGroup.quaternion); // Apply the character's rotation to the offset
+        camera.position.copy(characterPosition).add(offset);
+    
+        // Calculate the look-at target based on the character's forward direction
+        const forward = new THREE.Vector3(0, 0, -1); // Default forward direction in Three.js
+        forward.applyQuaternion(character.characterGroup.quaternion); // Apply the character's rotation
+        const lookAtTarget = characterPosition.clone().add(forward); // Look at a point directly in front of the character
+    
+        // Make the camera look at the calculated target
+        camera.lookAt(lookAtTarget);
+    } else {
+        // Third-person view: position the camera above the maze
+        const mazeWidth = mazeSize.width * wallSize; 
+        const mazeDepth = mazeSize.height * wallSize; 
+        const maxDimension = Math.max(mazeWidth, mazeDepth);
+        const cameraHeight = maxDimension * 7; 
+        camera.position.set(0, cameraHeight, 0); 
+        camera.lookAt(mazeWidth / 2, 0, mazeDepth / 2);
+    }
+}
+
 
 // Setup and generate the game (maze, walls, floor, objects, and character)
 function setupGame() {
@@ -105,6 +161,8 @@ function setupGame() {
     // Add player character
     character = new Character(scene, mazeGrid, wallSize, mazeObjects);
 
+    // controlPanel = new ControlPanel(character);
+
     //adjust if we want to add more NPCs
     for (let i = 0; i < 18; i++) {
         const randomPosition = getRandomValidPosition(mazeGrid);
@@ -146,15 +204,13 @@ function adjustCameraToViewMaze() {
     camera.rotation.x = -Math.PI / 2; 
 }
 
-
 // TODO(not as important): fix restart, right now clicking on button leads to black screen
 function restartMaze() {
-  // hide the popup
-  const popup = document.getElementById("popup");
-  popup.style.display = "none";
+    const popup = document.getElementById("popup");
+    popup.style.display = "none";
 
-  clearScene();
-  setupGame();
+    clearScene();
+    setupGame();
 }
 
 function clearScene() {
@@ -204,8 +260,26 @@ function animate() {
     const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
     lastTime = currentTime;
 
+    if (isFirstPerson) {
+        const characterPosition = character.characterGroup.position;
+        const offset = new THREE.Vector3(0, 1.5, -2); // Adjust these values as needed
+        offset.applyQuaternion(character.characterGroup.quaternion); // Apply the character's rotation to the offset
+        camera.position.copy(characterPosition).add(offset);
+
+        // Make the camera look in the direction the character is facing
+        const lookAtTarget = new THREE.Vector3(0, 0, -1).applyQuaternion(character.characterGroup.quaternion);
+        camera.lookAt(characterPosition.clone().add(lookAtTarget));
+    }
+
     controls.update();
     renderer.render(scene, camera);
+
+    // Update camera position and orientation in first-person view
+    if (isFirstPerson) {
+        const characterPosition = character.getPosition();
+        camera.position.set(characterPosition.x, characterPosition.y + 2, characterPosition.z + 5);
+        camera.lookAt(characterPosition.x, characterPosition.y, characterPosition.z);
+    }
 
     // get pos
     const { x, z } = character.getPosition();
