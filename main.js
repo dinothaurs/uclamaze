@@ -139,7 +139,7 @@ function adjustCameraToViewMaze() {
 
     const maxDimension = Math.max(mazeWidth, mazeDepth);
 
-    const cameraHeight = maxDimension * 4; 
+    const cameraHeight = maxDimension * 7; 
     camera.position.set(0, cameraHeight, 0); 
 
     camera.lookAt(mazeWidth / 2, 0, mazeDepth / 2); 
