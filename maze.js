@@ -2,28 +2,27 @@ export class MazeGenerator {
     constructor(height, width) {
         this.height = height;
         this.width = width;
-        this.cols = 2 * this.width + 1; // Compact maze columns
-        this.rows = 2 * this.height + 1; // Compact maze rows
+        this.cols = 2 * this.width + 1; 
+        this.rows = 2 * this.height + 1; 
 
-        // Initialize the original maze grid with empty arrays
+        // Initialize the original maze grid with walls and paths
         this.originalMaze = Array.from({ length: this.rows }, () =>
             Array.from({ length: this.cols }, () => [])
         );
 
         this.originalMaze.forEach((row, r) => {
             row.forEach((cell, c) => {
-                switch(r) {
+                switch (r) {
                     case 0:
                     case this.rows - 1:
                         this.originalMaze[r][c] = ["wall"];
                         break;
                     default:
-                        if((r % 2) == 1) {
-                            if((c == 0) || (c == this.cols - 1)) {
+                        if ((r % 2) == 1) {
+                            if ((c == 0) || (c == this.cols - 1)) {
                                 this.originalMaze[r][c] = ["wall"];
                             }
-                        }
-                        else if (c % 2 == 0) {
+                        } else if (c % 2 == 0) {
                             this.originalMaze[r][c] = ["wall"];
                         }
                 }
@@ -33,11 +32,6 @@ export class MazeGenerator {
         // Generate the maze
         this.generate_maze(1, this.height - 1, 1, this.width - 1);
         this.expand_maze();
-
-        console.log("Original Maze:", this.originalMaze.map(row =>
-            row.map(cell => cell.includes("wall") ? 1 : 0)
-        ));
-        console.log("Final Maze:", this.finalMaze);
     }
 
     generate_maze(r1, r2, c1, c2) {

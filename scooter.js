@@ -7,7 +7,7 @@ export class Scooter {
         this.position = position;
         this.scale = scale;
         this.model = null;
-        this.boundingBox = new THREE.Box3(); // Bounding box for collision detection
+        this.boundingBox = new THREE.Box3(); 
         this.loadModel();
     }
 
@@ -16,10 +16,17 @@ export class Scooter {
         loader.load('docs/Skate_Board_.fbx', (object) => {
             object.scale.set(this.scale, this.scale, this.scale);
             object.position.set(this.position.x, this.position.y, this.position.z);
+
+            object.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    child.castShadow = true; 
+                    child.receiveShadow = true; 
+                }
+            });
+
             this.scene.add(object);
             this.model = object;
 
-            // Update bounding box
             this.updateBoundingBox();
         }, 
         (xhr) => {
@@ -37,14 +44,14 @@ export class Scooter {
         }
     }
 
-    // Update bounding box for collision detection
+    // bounding box for collision control
     updateBoundingBox() {
         if (this.model) {
             this.boundingBox.setFromObject(this.model);
         }
     }
 
-    // Check collision with another bounding box
+    // check collision
     checkCollision(targetBox) {
         return this.boundingBox.intersectsBox(targetBox);
     }
@@ -57,7 +64,7 @@ export class Scooter {
                 z: this.model.position.z
             };
         }
-        return this.position; // Fallback to initial position if model is not loaded yet
+        return this.position; // go back to initial
     }
 
     getSize() {
@@ -66,6 +73,6 @@ export class Scooter {
             this.boundingBox.getSize(size);
             return size;
         }
-        return { x: 1, y: 1, z: 1 }; // Default size if bounding box is not available
+        return { x: 1, y: 1, z: 1 }; // go to default
     }
 }

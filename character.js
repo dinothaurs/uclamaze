@@ -12,20 +12,19 @@ export class Character {
         this.isNPC = isNPC;
         this.direction = initialDirection || new THREE.Vector3(0, 0, -1);
 
-        // Setup for round
-        this.lives = 3;
-        this.timeForLevel = 60;
+        // setup
+        this.lives = 1;
+        this.timeForLevel = 120;
         this.timeLeft = this.timeForLevel;
         this.startTime = null;
         this.isFirstPerson = true;
 
-        // Initialize character model
+        // initialize
         this.characterModel = new CharacterModel(this.wallSize, bodyColor);
         this.characterGroup = this.characterModel.getCharacterGroup();
 
-        // Debugging: Check if characterGroup is defined
         if (!this.characterGroup) {
-            console.error("characterGroup is undefined. Check CharacterModel implementation.");
+            console.error("characterGroup is undefined.");
         } else {
             this.scene.add(this.characterGroup);
         }
@@ -35,7 +34,6 @@ export class Character {
 
         if (!this.isNPC) {
             this.setupControls();
-            this.createControlPanel();
         }
 
         this.clock = new THREE.Clock();
@@ -44,37 +42,67 @@ export class Character {
 
     updatePosition() {
         if (!this.characterGroup) {
-            console.error("characterGroup is undefined. Cannot update position.");
+            console.error("characterGroup is undefined");
             return;
         }
-
+    
         this.characterGroup.position.set(
             (this.position.x - 0.2) * this.wallSize - (this.mazeGrid[0].length * this.wallSize) / 2,
             0.3,
             -((this.position.z - 0.5) * this.wallSize - (this.mazeGrid.length * this.wallSize) / 2)
         );
         this.updateBoundingBox();
+    
+        // position updating
+        if (!this.isNPC) {
+            document.getElementById("position").innerText = `${this.position.x.toFixed(2)}, ${this.position.z.toFixed(2)}`;
+        }
     }
 
     updateBoundingBox() {
         if (!this.characterGroup) {
-            console.error("characterGroup is undefined. Cannot update bounding box.");
+            console.error("characterGroup is undefined");
             return;
         }
 
         this.boundingBox = new THREE.Box3().setFromObject(this.characterGroup);
     }
 
-    resetGame() {
-        this.lives = 3;
-        this.timeLeft = this.timeForLevel;
-        this.startTime = performance.now();
+    reset() {
+        // reset position
         this.position = { x: 5.3, z: 4.9 };
         this.updatePosition();
+    
+        // reset everything
+        this.direction = new THREE.Vector3(0, 0, -1);
+    
+        if (!this.isNPC) {
+            this.lives = 1;
+            document.getElementById("lives").innerText = this.lives;
+        }
+    
+        if (!this.isNPC) {
+            this.timeLeft = this.timeForLevel;
+            this.startTime = performance.now();
+            document.getElementById("time").innerText = this.timeLeft;
+        }
+    
+        this.characterModel.stopWalking();
+    }
+
+    resetGame() {
+        this.reset();
+    
+        for (const character of this.allCharacters) {
+            if (character.isNPC) {
+                character.reset();
+            }
+        }
+    
         document.getElementById("lives").innerText = this.lives;
         document.getElementById("time").innerText = this.timeLeft;
-        this.clock.start();
     }
+    
 
     createControlPanel() {
         const panel = document.createElement('div');
@@ -95,17 +123,17 @@ export class Character {
         panel.style.padding = '10px';
         panel.style.borderRadius = '5px';
         document.body.appendChild(panel);
-
+    
         document.getElementById('start-game').addEventListener('click', () => this.resetGame());
-
     }
-
+    
 
     checkCollision(newX, newZ, direction = null) {
         const buffer = 0.5;
         const gridX = Math.floor(newX / this.wallSize);
         const gridZ = Math.floor(newZ / this.wallSize);
-
+    
+        // wall collisions
         if (
             gridX < buffer || gridX >= this.mazeGrid[0].length - buffer ||
             gridZ < buffer || gridZ >= this.mazeGrid.length - buffer ||
@@ -113,7 +141,8 @@ export class Character {
         ) {
             return true;
         }
-
+    
+        // scooter collisions
         if (this.mazeObjects && this.mazeObjects.objects) {
             for (const scooter of this.mazeObjects.objects) {
                 scooter.updateBoundingBox();
@@ -125,16 +154,26 @@ export class Character {
                 }
             }
         }
-
+    
+        // NPC collision
         for (const character of this.allCharacters) {
             if (character !== this) {
                 character.updateBoundingBox();
                 if (this.boundingBox.intersectsBox(character.boundingBox)) {
+                    if (!this.isNPC) {
+                        this.lives -= 1; // player dies
+                        console.log("player dead: lives: ", this.lives); 
+                        document.getElementById("lives").innerText = this.lives; 
+                        if (this.lives <= 0) {
+                            alert("Game Over! You ran out of lives.");
+                            this.resetGame(); 
+                        }
+                    }
                     return true;
                 }
             }
         }
-
+    
         return false;
     }
 
@@ -211,24 +250,38 @@ export class Character {
 
     animate() {
         const deltaTime = this.clock.getDelta();
-
+    
         if (this.isNPC) {
             this.moveNPC(deltaTime);
         }
-
+    
         this.characterModel.update(deltaTime);
-
+    
         if (!this.startTime) this.startTime = performance.now();
         this.timeLeft = this.timeForLevel - Math.floor((performance.now() - this.startTime) / 1000);
-
-        // if (this.timeLeft <= 0 || this.lives <= 0) {
-        //     alert("Game Over! ");
-        //     this.resetGame();
-        // }
-
+    
+        // Check for collisions with NPCs
+        if (!this.isNPC) {
+            for (const character of this.allCharacters) {
+                if (character !== this && character.isNPC) {
+                    character.updateBoundingBox();
+                    if (this.boundingBox.intersectsBox(character.boundingBox)) {
+                        console.log("Collision detected with NPC"); // Debugging
+                        this.lives -= 1; // Player loses a life
+                        document.getElementById("lives").innerText = this.lives;
+                        if (this.lives <= 0) {
+                            alert("Game Over! You ran out of lives.");
+                            this.resetGame(); // Reset the game
+                        }
+                        break; // Exit the loop after handling the collision
+                    }
+                }
+            }
+        }
+    
         document.getElementById("lives").innerText = this.lives;
         document.getElementById("time").innerText = this.timeLeft;
-
+    
         requestAnimationFrame(() => this.animate());
     }
 }
